@@ -64,6 +64,10 @@ private:
         int sum = i + j;
         return inner_size_ - 1 <= sum && sum <= getBoardSize() * 2 - inner_size_ - 1;
     }
+    inline bool isOnBoard(int action) const
+    {
+        return isOnBoard(action / board_size_, action % board_size_);
+    }
     int getPattern(int i, int j) const;
     // Disjoint set funtion
     inline int find(int x)
@@ -87,6 +91,8 @@ private:
         int edges = popcount(patterns[px] >> 6);
         if (corners >= 2 || edges >= 3) winner_ = turn_;
     }
+    std::vector<int> getNeighbors(int action) const;
+    bool hasRing(int action);
 
     Player winner_;
     std::vector<Player> board_;

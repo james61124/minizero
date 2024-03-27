@@ -3,6 +3,7 @@
 #include "random.h"
 #include "sgf_loader.h"
 #include <iostream>
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -326,7 +327,80 @@ std::vector<int> HavannahEnv::getWinningStonesPosition() const
     return winning_stones;
 }
 
-Player HavannahEnv::updateWinner(int action_id)
+std::vector<int> HavannahEnv::getNeighbors(int action) const
+{
+    std::vector<int> neighbors;
+    int offsets[6] = {
+        -1 - board_size_, 0 - board_size_,
+        -1 - 0 * board_size_, 1 + 0 * board_size_,
+        0 + board_size_, 1 + board_size_};
+    for (int i = 0; i < 6; i++) {
+        int col = action % board_size_;
+        if (col == 0 && (i == 0 || i == 2)) continue;
+        if (col == board_size_ - 1 && (i == 3 || i == 5)) continue;
+        int neighbor = action + offsets[i];
+        if (neighbor < 0 || neighbor >= board_size_ * board_size_) continue;
+        if (!isOnBoard(neighbor / board_size_, neighbor % board_size_)) continue;
+        neighbors.push_back(neighbor);
+    }
+    return neighbors;
+}
+
+bool HavannahEnv::hasRing(int action)
+{
+    int group = find(action);
+    int num = 0;
+    std::vector<bool> connection(board_size_ * board_size_, false);
+    for (int i = 0; i < board_size_ * board_size_; i++) {
+        if (!isOnBoard(i)) continue;
+        if (find(i) == group) {
+            connection[i] = true;
+            num++;
+        }
+    }
+    std::queue<int> checklist;
+    std::vector<bool> in_list(board_size_ * board_size_, false);
+    for (int i = 0; i < board_size_ * board_size_; i++) {
+        if (!connection[i]) continue;
+        std::vector<int> neighbors;
+        for (auto neighbor : getNeighbors(i)) {
+            if (connection[neighbor]) neighbors.push_back(neighbor);
+        }
+        if (neighbors.size() >= 3) continue;
+        checklist.push(i);
+        in_list[i] = true;
+    }
+    while (!checklist.empty() && num >= 6) {
+        int target = checklist.front();
+        checklist.pop();
+        in_list[target] = false;
+
+        std::vector<int> neighbors;
+        for (auto neighbor : getNeighbors(target)) {
+            if (connection[neighbor]) neighbors.push_back(neighbor);
+        }
+        int neighbor_size = neighbors.size();
+        if (neighbor_size >= 3) continue;
+        if (neighbor_size == 2) {
+            bool neighbors_are_not_neighbors = true;
+            for (auto neighbor : getNeighbors(neighbors[0])) {
+                if (neighbor == neighbors[1]) neighbors_are_not_neighbors = false;
+            }
+            if (neighbors_are_not_neighbors) continue;
+        }
+
+        num--;
+        connection[target] = false;
+        for (auto neighbor : neighbors) {
+            if (in_list[neighbor]) continue;
+            checklist.push(neighbor);
+            in_list[neighbor] = true;
+        }
+    }
+    return num >= 6;
+}
+
+Player HavannahEnv::updateWinner(int action)
 {
     // struct Coord{int x{}; int y{};};
     /* neighboorActionIds
@@ -338,19 +412,12 @@ Player HavannahEnv::updateWinner(int action_id)
     */
 
     // Get neighbor cells.
-    int neighbor_action_id_offsets[6] = {
-        -1 - board_size_, 0 - board_size_,
-        -1 - 0 * board_size_, 1 + 0 * board_size_,
-        0 + board_size_, 1 + board_size_};
-    for (int i = 0; i < 6; i++) {
-        int col = action_id % board_size_;
-        if (col == 0 && (i == 0 || i == 2)) continue;
-        if (col == board_size_ - 1 && (i == 3 || i == 5)) continue;
-        int neighbor = action_id + neighbor_action_id_offsets[i];
-        if (neighbor < 0 || neighbor >= board_size_ * board_size_) continue;
-        if (!isOnBoard(neighbor / board_size_, neighbor % board_size_)) continue;
+    for (auto neighbor : getNeighbors(action)) {
         if (board_[neighbor] != turn_) continue;
-        link(action_id, neighbor);
+        link(action, neighbor);
+    }
+    if (hasRing(action)) {
+        winner_ = turn_;
     }
     return winner_;
 }
