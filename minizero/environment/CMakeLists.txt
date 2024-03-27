@@ -8,6 +8,7 @@ target_include_directories(
     atari
     go
     gomoku
+    havannah
     hex
     killallgo
     nogo
