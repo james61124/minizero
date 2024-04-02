@@ -329,11 +329,18 @@ std::vector<int> HavannahEnv::getWinningStonesPosition() const
 
 std::vector<int> HavannahEnv::getNeighbors(int action) const
 {
+    /* neighboorActionIds
+      0 1
+      |/
+    2-C-3
+     /|
+    4 5
+    */
     std::vector<int> neighbors;
     int offsets[6] = {
-        -1 - board_size_, 0 - board_size_,
+        0 - board_size_, 1 - board_size_,
         -1 - 0 * board_size_, 1 + 0 * board_size_,
-        0 + board_size_, 1 + board_size_};
+        -1 + board_size_, 0 + board_size_};
     for (int i = 0; i < 6; i++) {
         int col = action % board_size_;
         if (col == 0 && (i == 0 || i == 2)) continue;
@@ -402,15 +409,6 @@ bool HavannahEnv::hasRing(int action)
 
 Player HavannahEnv::updateWinner(int action)
 {
-    // struct Coord{int x{}; int y{};};
-    /* neighboorActionIds
-      4 5
-      |/
-    2-C-3
-     /|
-    0 1
-    */
-
     // Get neighbor cells.
     for (auto neighbor : getNeighbors(action)) {
         if (board_[neighbor] != turn_) continue;
