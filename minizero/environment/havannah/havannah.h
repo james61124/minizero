@@ -43,7 +43,7 @@ public:
     float getEvalScore(bool is_resign = false) const override;
     std::vector<float> getFeatures(utils::Rotation rotation = utils::Rotation::kRotationNone) const override;
     std::vector<float> getActionFeatures(const HavannahAction& action, utils::Rotation rotation = utils::Rotation::kRotationNone) const override;
-    inline int getNumInputChannels() const override { return 4; }
+    inline int getNumInputChannels() const override { return 16; }
     inline int getPolicySize() const override { return getBoardSize() * getBoardSize(); }
     std::string toString() const override;
     std::string toStringDebug() const;
@@ -93,6 +93,8 @@ private:
     }
     std::vector<int> getNeighbors(int action) const;
     bool hasRing(int action);
+    bool on_virtual_bridge(int action, Player player, int bridgeType) const;
+    bool make_virtual_bridge(int action, Player player, int bridgeType) const;
 
     Player winner_;
     std::vector<Player> board_;

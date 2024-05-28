@@ -140,6 +140,38 @@ float HavannahEnv::getEvalScore(bool is_resign /* = false */) const
     }
 }
 
+bool HavannahEnv::on_virtual_bridge(int action, Player player, int bridgeType) const {
+    static const std::vector<std::vector<int>> offsets = {
+        {-kMaxHavannahBoardSize, kMaxHavannahBoardSize + 1, 0, 1},
+        {-kMaxHavannahBoardSize - 1, 1, 0, -kMaxHavannahBoardSize},
+        {1, kMaxHavannahBoardSize, 0, kMaxHavannahBoardSize + 1},
+        {kMaxHavannahBoardSize, -kMaxHavannahBoardSize - 1, 0, -1},
+        {kMaxHavannahBoardSize + 1, -1, 0, kMaxHavannahBoardSize},
+        {-1, -kMaxHavannahBoardSize, 0, -kMaxHavannahBoardSize - 1}
+    };
+
+    for (const auto& offset : offsets[bridgeType]) {
+        if (board_[action + offset] != static_cast<Player>(player)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool HavannahEnv::make_virtual_bridge(int action, Player player, int bridgeType) const {
+    static const std::vector<std::vector<int>> offsets = {
+        {-2 * kMaxHavannahBoardSize - 1, -kMaxHavannahBoardSize - 1, -kMaxHavannahBoardSize},
+        {-kMaxHavannahBoardSize + 1, -kMaxHavannahBoardSize, 1},
+        {kMaxHavannahBoardSize + 2, 1, kMaxHavannahBoardSize + 1},
+        {2 * kMaxHavannahBoardSize + 1, kMaxHavannahBoardSize + 1, kMaxHavannahBoardSize},
+        {kMaxHavannahBoardSize - 1, kMaxHavannahBoardSize, -1},
+        {-kMaxHavannahBoardSize - 2, -1, -kMaxHavannahBoardSize - 1}
+    };
+
+    return (board_[action + offsets[bridgeType][0]] == static_cast<Player>(player))
+        && (board_[action + offsets[bridgeType][1]] == Player::kPlayerNone) && (board_[action + offsets[bridgeType][2]] == Player::kPlayerNone);
+}
+
 std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils::Rotation::kRotationNone */) const
 {
     /* 4 channels:
@@ -148,8 +180,9 @@ std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils:
         3. White's turn
     */
     std::vector<float> vFeatures;
-    for (int channel = 0; channel < 4; ++channel) {
+    for (int channel = 0; channel < getNumInputChannels(); ++channel) {
         for (int pos = 0; pos < board_size_ * board_size_; ++pos) {
+            int rotation_pos = pos;
             switch (channel) {
                 case 0:
                     vFeatures.push_back((board_[rotation_pos] == turn_ ? 1.0f : 0.0f));
@@ -165,6 +198,14 @@ std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils:
                     break;
                 default:
                     break;
+            }
+            // on virtual bridge
+            if (channel >= 4 && channel <= 9) {
+                vFeatures.push_back((on_virtual_bridge(rotation_pos, turn_, channel - 4) ? 1.0f : 0.0f));
+            }
+            // make virtual bridge
+            if (channel >= 10 && channel <= 15) {
+                vFeatures.push_back((make_virtual_bridge(rotation_pos, turn_, channel - 10) ? 1.0f : 0.0f));
             }
         }
     }
