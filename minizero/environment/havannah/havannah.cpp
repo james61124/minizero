@@ -176,11 +176,13 @@ bool HavannahEnv::make_virtual_bridge(int action, Player player, int bridgeType)
 std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils::Rotation::kRotationNone */) const
 {
     /* 4 channels:
-        0~1. own/opponent position
+        0~1. own/opponent's position
         2. Black's turn
         3. White's turn
         4~9: on own virtual bridge
-        10~15: this position make a virtual bridge
+        10~15: on opponent's virtual bridge
+        16~21: this position make player a virtual bridge
+        22~27: this position make opponent a virtual bridge
     */
     std::vector<float> vFeatures;
     for (int channel = 0; channel < getNumInputChannels(); ++channel) {
@@ -202,13 +204,17 @@ std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils:
                 default:
                     break;
             }
-            // on virtual bridge
             if (channel >= 4 && channel <= 9) {
                 vFeatures.push_back((on_virtual_bridge(rotation_pos, turn_, channel - 4) ? 1.0f : 0.0f));
             }
-            // make virtual bridge
             if (channel >= 10 && channel <= 15) {
+                vFeatures.push_back((on_virtual_bridge(rotation_pos, getNextPlayer(turn_, kHavannahNumPlayer), channel - 4) ? 1.0f : 0.0f));
+            }
+            if (channel >= 16 && channel <= 21) {
                 vFeatures.push_back((make_virtual_bridge(rotation_pos, turn_, channel - 10) ? 1.0f : 0.0f));
+            }
+            if (channel >= 22 && channel <= 27) {
+                vFeatures.push_back((make_virtual_bridge(rotation_pos, getNextPlayer(turn_, kHavannahNumPlayer), channel - 10) ? 1.0f : 0.0f));
             }
         }
     }
