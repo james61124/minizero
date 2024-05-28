@@ -142,6 +142,7 @@ float HavannahEnv::getEvalScore(bool is_resign /* = false */) const
 
 bool HavannahEnv::on_virtual_bridge(int action, Player player, int bridgeType) const {
     static const std::vector<std::vector<int>> offsets = {
+        // own_pos_1, own_pos_2, empty_pos_1, empty_pos_2
         {-kMaxHavannahBoardSize, kMaxHavannahBoardSize + 1, 0, 1},
         {-kMaxHavannahBoardSize - 1, 1, 0, -kMaxHavannahBoardSize},
         {1, kMaxHavannahBoardSize, 0, kMaxHavannahBoardSize + 1},
@@ -150,16 +151,15 @@ bool HavannahEnv::on_virtual_bridge(int action, Player player, int bridgeType) c
         {-1, -kMaxHavannahBoardSize, 0, -kMaxHavannahBoardSize - 1}
     };
 
-    for (const auto& offset : offsets[bridgeType]) {
-        if (board_[action + offset] != static_cast<Player>(player)) {
-            return false;
-        }
-    }
-    return true;
+    return (board_[action + offsets[bridgeType][0]] == static_cast<Player>(player))
+        && (board_[action + offsets[bridgeType][1]] == static_cast<Player>(player))
+        && (board_[action + offsets[bridgeType][2]] == Player::kPlayerNone)
+        && (board_[action + offsets[bridgeType][3]] == Player::kPlayerNone);
 }
 
 bool HavannahEnv::make_virtual_bridge(int action, Player player, int bridgeType) const {
     static const std::vector<std::vector<int>> offsets = {
+        // own_pos_1, empty_pos_1, empty_pos_2 
         {-2 * kMaxHavannahBoardSize - 1, -kMaxHavannahBoardSize - 1, -kMaxHavannahBoardSize},
         {-kMaxHavannahBoardSize + 1, -kMaxHavannahBoardSize, 1},
         {kMaxHavannahBoardSize + 2, 1, kMaxHavannahBoardSize + 1},
@@ -169,7 +169,8 @@ bool HavannahEnv::make_virtual_bridge(int action, Player player, int bridgeType)
     };
 
     return (board_[action + offsets[bridgeType][0]] == static_cast<Player>(player))
-        && (board_[action + offsets[bridgeType][1]] == Player::kPlayerNone) && (board_[action + offsets[bridgeType][2]] == Player::kPlayerNone);
+        && (board_[action + offsets[bridgeType][1]] == Player::kPlayerNone)
+        && (board_[action + offsets[bridgeType][2]] == Player::kPlayerNone);
 }
 
 std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils::Rotation::kRotationNone */) const
@@ -178,6 +179,8 @@ std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils:
         0~1. own/opponent position
         2. Black's turn
         3. White's turn
+        4~9: on own virtual bridge
+        10~15: this position make a virtual bridge
     */
     std::vector<float> vFeatures;
     for (int channel = 0; channel < getNumInputChannels(); ++channel) {
