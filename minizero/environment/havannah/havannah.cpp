@@ -143,12 +143,12 @@ float HavannahEnv::getEvalScore(bool is_resign /* = false */) const
 bool HavannahEnv::on_virtual_bridge(int action, Player player, int bridgeType) const {
     static const std::vector<std::vector<int>> offsets = {
         // own_pos_1, own_pos_2, empty_pos_1, empty_pos_2
-        {-kMaxHavannahBoardSize, kMaxHavannahBoardSize + 1, 0, 1},
-        {-kMaxHavannahBoardSize - 1, 1, 0, -kMaxHavannahBoardSize},
-        {1, kMaxHavannahBoardSize, 0, kMaxHavannahBoardSize + 1},
-        {kMaxHavannahBoardSize, -kMaxHavannahBoardSize - 1, 0, -1},
-        {kMaxHavannahBoardSize + 1, -1, 0, kMaxHavannahBoardSize},
-        {-1, -kMaxHavannahBoardSize, 0, -kMaxHavannahBoardSize - 1}
+        {-board_size_, board_size_ + 1, 0, 1},
+        {-board_size_ - 1, 1, 0, -board_size_},
+        {1, board_size_, 0, board_size_ + 1},
+        {board_size_, -board_size_ - 1, 0, -1},
+        {board_size_ + 1, -1, 0, board_size_},
+        {-1, -board_size_, 0, -board_size_ - 1}
     };
 
     return (board_[action + offsets[bridgeType][0]] == static_cast<Player>(player))
@@ -159,13 +159,13 @@ bool HavannahEnv::on_virtual_bridge(int action, Player player, int bridgeType) c
 
 bool HavannahEnv::make_virtual_bridge(int action, Player player, int bridgeType) const {
     static const std::vector<std::vector<int>> offsets = {
-        // own_pos_1, empty_pos_1, empty_pos_2 
-        {-2 * kMaxHavannahBoardSize - 1, -kMaxHavannahBoardSize - 1, -kMaxHavannahBoardSize},
-        {-kMaxHavannahBoardSize + 1, -kMaxHavannahBoardSize, 1},
-        {kMaxHavannahBoardSize + 2, 1, kMaxHavannahBoardSize + 1},
-        {2 * kMaxHavannahBoardSize + 1, kMaxHavannahBoardSize + 1, kMaxHavannahBoardSize},
-        {kMaxHavannahBoardSize - 1, kMaxHavannahBoardSize, -1},
-        {-kMaxHavannahBoardSize - 2, -1, -kMaxHavannahBoardSize - 1}
+        // own_pos_1, empty_pos_1, empty_pos_2
+        {-2 * board_size_ - 1, -board_size_ - 1, -board_size_},
+        {-board_size_ + 1, -board_size_, 1},
+        {board_size_ + 2, 1, board_size_ + 1},
+        {2 * board_size_ + 1, board_size_ + 1, board_size_},
+        {board_size_ - 1, board_size_, -1},
+        {-board_size_ - 2, -1, -board_size_ - 1}
     };
 
     return (board_[action + offsets[bridgeType][0]] == static_cast<Player>(player))
