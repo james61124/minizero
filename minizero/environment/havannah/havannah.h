@@ -43,7 +43,7 @@ public:
     float getEvalScore(bool is_resign = false) const override;
     std::vector<float> getFeatures(utils::Rotation rotation = utils::Rotation::kRotationNone) const override;
     std::vector<float> getActionFeatures(const HavannahAction& action, utils::Rotation rotation = utils::Rotation::kRotationNone) const override;
-    inline int getNumInputChannels() const override { return 16; }
+    inline int getNumInputChannels() const override { return 28; }
     inline int getPolicySize() const override { return getBoardSize() * getBoardSize(); }
     std::string toString() const override;
     std::string toStringDebug() const;
