@@ -150,15 +150,21 @@ std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils:
     std::vector<float> vFeatures;
     for (int channel = 0; channel < 4; ++channel) {
         for (int pos = 0; pos < board_size_ * board_size_; ++pos) {
-            int rotation_pos = pos;
-            if (channel == 0) {
-                vFeatures.push_back((board_[rotation_pos] == turn_ ? 1.0f : 0.0f));
-            } else if (channel == 1) {
-                vFeatures.push_back((board_[rotation_pos] == getNextPlayer(turn_, kHavannahNumPlayer) ? 1.0f : 0.0f));
-            } else if (channel == 2) {
-                vFeatures.push_back((turn_ == Player::kPlayer1 ? 1.0f : 0.0f));
-            } else if (channel == 3) {
-                vFeatures.push_back((turn_ == Player::kPlayer2 ? 1.0f : 0.0f));
+            switch (channel) {
+                case 0:
+                    vFeatures.push_back((board_[rotation_pos] == turn_ ? 1.0f : 0.0f));
+                    break;
+                case 1:
+                    vFeatures.push_back((board_[rotation_pos] == getNextPlayer(turn_, kHavannahNumPlayer) ? 1.0f : 0.0f));
+                    break;
+                case 2:
+                    vFeatures.push_back((turn_ == Player::kPlayer1 ? 1.0f : 0.0f));
+                    break;
+                case 3:
+                    vFeatures.push_back((turn_ == Player::kPlayer2 ? 1.0f : 0.0f));
+                    break;
+                default:
+                    break;
             }
         }
     }
