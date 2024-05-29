@@ -50,6 +50,7 @@ protected:
     Action action_;
     int num_children_;
     TreeNode* first_child_;
+    std::vector<float> win_condition_;
 };
 
 class Tree {

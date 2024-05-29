@@ -31,6 +31,7 @@ public:
         value_ = 0.0f;
         reward_ = 0.0f;
         first_child_ = nullptr;
+        win_condition_.resize(6, 0.0f);
     }
 
     virtual void add(float value, float weight = 1.0f)
