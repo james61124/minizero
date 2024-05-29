@@ -245,7 +245,7 @@ public:
         }
     }
 
-    virtual void backup(const std::vector<MCTSNode*>& node_path, const float value, const float reward = 0.0f)
+    virtual void backup(const std::vector<MCTSNode*>& node_path, const float value, const float reward = 0.0f, const std::vector<float>& win_condition)
     {
         assert(node_path.size() > 0);
         float updated_value = value;
@@ -257,6 +257,10 @@ public:
             node->add(updated_value);
             updateTreeValueBound(old_mean, node->getReward() + config::actor_mcts_reward_discount * node->getMean());
             updated_value = node->getReward() + config::actor_mcts_reward_discount * updated_value;
+        }
+        for (int i = 0; i < 6; ++i) {
+            float old_win_condition = node_path.back()->win_condition_[i];
+            node_path.back()->win_condition_[i] = (old_win_condition * node_path.back()->getCount() + win_condition[i]) / (node_path.back()->getCount() + 1);
         }
     }
 
