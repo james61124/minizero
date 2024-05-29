@@ -41,6 +41,7 @@ public:
     bool isTerminal() const override;
     float getReward() const override { return 0.0f; }
     float getEvalScore(bool is_resign = false) const override;
+    std::vector<float> getWinCondition() const;
     std::vector<float> getFeatures(utils::Rotation rotation = utils::Rotation::kRotationNone) const override;
     std::vector<float> getActionFeatures(const HavannahAction& action, utils::Rotation rotation = utils::Rotation::kRotationNone) const override;
     inline int getNumInputChannels() const override { return 4; }
@@ -57,6 +58,7 @@ public:
 
 private:
     Player updateWinner(int actionID);
+    void updateWinCondition(int actionID);
     inline bool isOnBoard(int i, int j) const
     {
         if (i < 0 || i >= board_size_) return false;
@@ -86,10 +88,6 @@ private:
         }
         parents[py] = px;
         patterns[px] |= patterns[py];
-
-        int corners = popcount(patterns[px] & 0x3f);
-        int edges = popcount(patterns[px] >> 6);
-        if (corners >= 2 || edges >= 3) winner_ = turn_;
     }
     std::vector<int> getNeighbors(int action) const;
     bool hasRing(int action);
@@ -103,6 +101,8 @@ private:
     std::vector<int> parents;
     std::vector<int> patterns;
     std::vector<int> ranks;
+    // win condition: player1 ring, bridge, fork, player2 ring, bridge, fork
+    std::vector<float> win_condition;
 };
 
 class HavannahEnvLoader : public BaseBoardEnvLoader<HavannahAction, HavannahEnv> {
