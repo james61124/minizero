@@ -28,6 +28,7 @@ class MinizeroDadaLoader:
         if py.get_nn_type_name() == "alphazero":
             self.action_features = None
             self.policy = np.zeros(py.get_batch_size() * py.get_nn_action_size(), dtype=np.float32)
+            self.win_condition = np.zeros(py.get_batch_size() * 6, dtype=np.float32)
             self.value = np.zeros(py.get_batch_size() * py.get_nn_discrete_value_size(), dtype=np.float32)
             self.reward = None
         else:
@@ -48,7 +49,7 @@ class MinizeroDadaLoader:
                 self.data_list.pop(0)
 
     def sample_data(self, device='cpu'):
-        self.data_loader.sample_data(self.features, self.action_features, self.policy, self.value, self.reward, self.loss_scale, self.sampled_index)
+        self.data_loader.sample_data(self.features, self.action_features, self.policy, self.win_condition, self.value, self.reward, self.loss_scale, self.sampled_index)
         features = torch.FloatTensor(self.features).view(py.get_batch_size(), py.get_nn_num_input_channels(), py.get_nn_input_channel_height(), py.get_nn_input_channel_width()).to(device)
         action_features = None if self.action_features is None else torch.FloatTensor(self.action_features).view(py.get_batch_size(),
                                                                                                                  -1,
@@ -56,12 +57,13 @@ class MinizeroDadaLoader:
                                                                                                                  py.get_nn_hidden_channel_height(),
                                                                                                                  py.get_nn_hidden_channel_width()).to(device)
         policy = torch.FloatTensor(self.policy).view(py.get_batch_size(), -1, py.get_nn_action_size()).to(device)
+        win_condition = torch.FloatTensor(self.win_condition).view(py.get_batch_size(), -1, 6).to(device)
         value = torch.FloatTensor(self.value).view(py.get_batch_size(), -1, py.get_nn_discrete_value_size()).to(device)
         reward = None if self.reward is None else torch.FloatTensor(self.reward).view(py.get_batch_size(), -1, py.get_nn_discrete_value_size()).to(device)
         loss_scale = torch.FloatTensor(self.loss_scale / np.amax(self.loss_scale)).to(device)
         sampled_index = self.sampled_index
 
-        return features, action_features, policy, value, reward, loss_scale, sampled_index
+        return features, action_features, policy, win_condition, value, reward, loss_scale, sampled_index
 
     def update_priority(self, sampled_index, batch_values):
         batch_values = (batch_values * self.value_accumulator).sum(axis=1)
@@ -118,12 +120,16 @@ class Model:
         torch.jit.script(self.network.module).save(f"{training_dir}/model/weight_iter_{self.training_step}.pt")
 
 
-def calculate_loss(network_output, label_policy, label_value, label_reward, loss_scale):
+def calculate_loss(network_output, label_policy, label_win_condition, label_value, label_reward, loss_scale):
     # policy
     if py.use_gumbel():
         loss_policy = (nn.functional.kl_div(nn.functional.log_softmax(network_output["policy_logit"], dim=1), label_policy, reduction='none').sum(dim=1) * loss_scale).mean()
     else:
         loss_policy = -((label_policy * nn.functional.log_softmax(network_output["policy_logit"], dim=1)).sum(dim=1) * loss_scale).mean()
+
+    # win condition
+    if label_win_condition is not None:
+        loss_win_condition = -((label_win_condition * nn.functional.log_softmax(network_output["win_condition_logit"], dim=1)).sum(dim=1) * loss_scale).mean()
 
     # value
     if py.get_nn_discrete_value_size() == 1:
@@ -136,7 +142,7 @@ def calculate_loss(network_output, label_policy, label_value, label_reward, loss
     if label_reward is not None and "reward_logit" in network_output:
         loss_reward = -((label_reward * nn.functional.log_softmax(network_output["reward_logit"], dim=1)).sum(dim=1) * loss_scale).mean()
 
-    return loss_policy, loss_value, loss_reward
+    return loss_policy, loss_win_condition, loss_value, loss_reward
 
 
 def add_training_info(training_info, key, value):
@@ -162,16 +168,18 @@ def train(model, training_dir, data_loader, start_iter, end_iter):
     training_info = {}
     for i in range(1, py.get_training_step() + 1):
         model.optimizer.zero_grad()
-        features, action_features, label_policy, label_value, label_reward, loss_scale, sampled_index = data_loader.sample_data(model.device)
+        features, action_features, label_policy, label_win_condition, label_value, label_reward, loss_scale, sampled_index = data_loader.sample_data(model.device)
 
         if py.get_nn_type_name() == "alphazero":
             network_output = model.network(features)
-            loss_policy, loss_value, _ = calculate_loss(network_output, label_policy[:, 0], label_value[:, 0], None, loss_scale)
-            loss = loss_policy + py.get_value_loss_scale() * loss_value
+            loss_policy, loss_win_condition, loss_value, _ = calculate_loss(network_output, label_policy[:, 0], label_win_condition[:, 0], label_value[:, 0], None, loss_scale)
+            loss = loss_policy + loss_win_condition + py.get_value_loss_scale() * loss_value
 
             # record training info
             add_training_info(training_info, 'loss_policy', loss_policy.item())
             add_training_info(training_info, 'accuracy_policy', calculate_accuracy(network_output["policy_logit"], label_policy[:, 0], py.get_batch_size()))
+            add_training_info(training_info, 'loss_win_condition', loss_win_condition.item())
+            add_training_info(training_info, 'accuracy_win_condition', calculate_accuracy(network_output["win_condition_logit"], label_win_condition[:, 0], py.get_batch_size()))
             add_training_info(training_info, 'loss_value', loss_value.item())
         elif py.get_nn_type_name() == "muzero":
             network_output = model.network(features)
