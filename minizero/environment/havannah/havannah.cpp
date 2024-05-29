@@ -422,7 +422,7 @@ Player HavannahEnv::updateWinner(int action)
     }
     if (hasRing(action)) {
         winner_ = turn_;
-        win_condition[(winner_ - 1) * 3] = 1.0f;
+        win_condition[(static_cast<int>(winner_) - 1) * 3] = 1.0f;
     }
     return winner_;
 }

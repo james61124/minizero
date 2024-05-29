@@ -91,8 +91,8 @@ private:
         int corners = popcount(patterns[px] & 0x3f);
         int edges = popcount(patterns[px] >> 6);
         if (corners >= 2 || edges >= 3) winner_ = turn_;
-        if (corners >= 2) win_condition[(winner_ - 1) * 3 + 1] = 1.0f;
-        if (edges >= 3) win_condition[(winner_ - 1) * 3 + 2] = 1.0f;
+        if (corners >= 2) win_condition[(static_cast<int>(winner_) - 1) * 3 + 1] = 1.0f;
+        if (edges >= 3) win_condition[(static_cast<int>(winner_) - 1) * 3 + 2] = 1.0f;
     }
     std::vector<int> getNeighbors(int action) const;
     bool hasRing(int action);
