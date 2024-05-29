@@ -15,12 +15,16 @@ public:
     float value_;
     std::vector<float> policy_;
     std::vector<float> policy_logits_;
+    std::vector<float> win_condition_;
+    std::vector<float> win_condition_logits_;
 
     AlphaZeroNetworkOutput(int policy_size)
     {
         value_ = 0.0f;
         policy_.resize(policy_size, 0.0f);
         policy_logits_.resize(policy_size, 0.0f);
+        win_condition_.resize(6, 0.0f);
+        win_condition_logits_.resize(6, 0.0f);
     }
 };
 
@@ -67,9 +71,13 @@ public:
 
         auto policy_output = forward_result.at("policy").toTensor().to(at::kCPU);
         auto policy_logits_output = forward_result.at("policy_logit").toTensor().to(at::kCPU);
+        auto win_condition_output = forward_result.at("win_condition").toTensor().to(at::kCPU);
+        auto win_condition_logits_output = forward_result.at("win_condition_logit").toTensor().to(at::kCPU);
         auto value_output = forward_result.at("value").toTensor().to(at::kCPU);
         assert(policy_output.numel() == batch_size_ * getActionSize());
         assert(policy_logits_output.numel() == batch_size_ * getActionSize());
+        assert(win_condition_output.numel() == batch_size_ * 6);
+        assert(win_condition_logits_output.numel() == batch_size_ * 6);
         assert(value_output.numel() == batch_size_ * getDiscreteValueSize());
 
         const int policy_size = getActionSize();
@@ -85,6 +93,14 @@ public:
             std::copy(policy_logits_output.data_ptr<float>() + i * policy_size,
                       policy_logits_output.data_ptr<float>() + (i + 1) * policy_size,
                       alphazero_network_output->policy_logits_.begin());
+
+            // win condition & win condition logits
+            std::copy(win_condition_output.data_ptr<float>() + i * 6,
+                      win_condition_output.data_ptr<float>() + (i + 1) * 6,
+                      alphazero_network_output->win_condition_.begin());
+            std::copy(win_condition_logits_output.data_ptr<float>() + i * 6,
+                      win_condition_logits_output.data_ptr<float>() + (i + 1) * 6,
+                      alphazero_network_output->win_condition_logits_.begin());
 
             // value
             if (getDiscreteValueSize() == 1) {
