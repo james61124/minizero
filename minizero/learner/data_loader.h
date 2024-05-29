@@ -25,6 +25,7 @@ public:
     float* features_;
     float* action_features_;
     float* policy_;
+    float* win_condition_;
     float* value_;
     float* reward_;
     float* loss_scale_;
