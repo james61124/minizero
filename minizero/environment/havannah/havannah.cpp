@@ -144,7 +144,7 @@ float HavannahEnv::getEvalScore(bool is_resign /* = false */) const
 
 std::vector<float> HavannahEnv::getWinCondition() const
 {
-    return win_condition;    
+    return win_condition;
 }
 
 std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils::Rotation::kRotationNone */) const
@@ -430,6 +430,10 @@ Player HavannahEnv::updateWinner(int action)
 
 void HavannahEnv::updateWinCondition(int action)
 {
+    // check if all entries of win_condition is 0.0f
+    for (const auto& i : win_condition) {
+        if (i != 0.0f) return;
+    }
     int action_parent = find(action);
     int corners = popcount(patterns[action_parent] & 0x3f);
     int edges = popcount(patterns[action_parent] >> 6);
