@@ -44,6 +44,7 @@ void HavannahEnv::reset()
     parents.resize(board_size_ * board_size_);
     patterns.resize(board_size_ * board_size_);
     ranks.resize(board_size_ * board_size_);
+    win_condition.resize(6, 0.0f);
     empty_counter_ = 0;
     int t = 0;
     for (int i = 0; i < board_size_; i++) {
@@ -138,6 +139,11 @@ float HavannahEnv::getEvalScore(bool is_resign /* = false */) const
         case Player::kPlayer2: return -1.0f;
         default: return 0.0f;
     }
+}
+
+std::vector<float> HavannahEnv::getWinCondition() const
+{
+    return win_condition;    
 }
 
 std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils::Rotation::kRotationNone */) const
@@ -416,6 +422,7 @@ Player HavannahEnv::updateWinner(int action)
     }
     if (hasRing(action)) {
         winner_ = turn_;
+        win_condition[(winner_ - 1) * 3] = 1.0f;
     }
     return winner_;
 }
