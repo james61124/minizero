@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .network_unit import ResidualBlock, PolicyNetwork, ValueNetwork, DiscreteValueNetwork
+from .network_unit import ResidualBlock, PolicyNetwork, ValueNetwork, WinConditionNetwork, DiscreteValueNetwork
 
 
 class AlphaZeroNetwork(nn.Module):
@@ -34,6 +34,7 @@ class AlphaZeroNetwork(nn.Module):
         self.bn = nn.BatchNorm2d(num_hidden_channels)
         self.residual_blocks = nn.ModuleList([ResidualBlock(num_hidden_channels) for _ in range(num_blocks)])
         self.policy = PolicyNetwork(num_hidden_channels, hidden_channel_height, hidden_channel_width, action_size)
+        self.win_condition = WinConditionNetwork(num_hidden_channels, hidden_channel_height, hidden_channel_width, 6)
         if self.discrete_value_size == 1:
             self.value = ValueNetwork(num_hidden_channels, hidden_channel_height, hidden_channel_width, num_value_hidden_channels)
         else:
@@ -98,16 +99,25 @@ class AlphaZeroNetwork(nn.Module):
         policy_logit = self.policy(x)
         policy = torch.softmax(policy_logit, dim=1)
 
+        # win condition
+        # black ring, black bridge, black fork, white ring, white bridge, white fork
+        win_condition_logit = self.win_condition(x)
+        win_condition = torch.softmax(win_condition_logit, dim=1)
+
         # value
         if self.discrete_value_size == 1:
             value = self.value(x)
             return {"policy_logit": policy_logit,
                     "policy": policy,
+                    "win_condition_logit": win_condition_logit,
+                    "win_condition": win_condition,
                     "value": value}
         else:
             value_logit = self.value(x)
             value = torch.softmax(value_logit, dim=1)
             return {"policy_logit": policy_logit,
                     "policy": policy,
+                    "win_condition_logit": win_condition_logit,
+                    "win_condition": win_condition,
                     "value_logit": value_logit,
                     "value": value}

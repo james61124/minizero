@@ -42,6 +42,25 @@ class PolicyNetwork(nn.Module):
         return x
 
 
+class WinConditionNetwork(nn.Module):
+    def __init__(self, num_channels, channel_height, channel_width, win_condition_size):
+        super(PolicyNetwork, self).__init__()
+        self.channel_height = channel_height
+        self.channel_width = channel_width
+        self.num_output_channels = math.ceil(win_condition_size / (channel_height * channel_width))
+        self.conv = nn.Conv2d(num_channels, self.num_output_channels, kernel_size=1)
+        self.bn = nn.BatchNorm2d(self.num_output_channels)
+        self.fc = nn.Linear(self.num_output_channels * channel_height * channel_width, win_condition_size)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = F.relu(x)
+        x = x.view(-1, self.num_output_channels * self.channel_height * self.channel_width)
+        x = self.fc(x)
+        return x
+
+
 class ValueNetwork(nn.Module):
     def __init__(self, num_channels, channel_height, channel_width, num_value_hidden_channels):
         super(ValueNetwork, self).__init__()
