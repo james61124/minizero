@@ -92,6 +92,7 @@ bool HavannahEnv::act(const HavannahAction& action)
     }
 
     winner_ = updateWinner(action_id);
+    updateWinCondition(action_id);
     turn_ = action.nextPlayer();
 
     return true;
@@ -420,11 +421,36 @@ Player HavannahEnv::updateWinner(int action)
         if (board_[neighbor] != turn_) continue;
         link(action, neighbor);
     }
-    if (hasRing(action)) {
-        winner_ = turn_;
-        win_condition[(static_cast<int>(winner_) - 1) * 3] = 1.0f;
-    }
+    int action_parent = find(action);
+    int corners = popcount(patterns[action_parent] & 0x3f);
+    int edges = popcount(patterns[action_parent] >> 6);
+    if (corners >= 2 || edges >= 3 || hasRing(action)) winner_ = turn_;
     return winner_;
+}
+
+void HavannahEnv::updateWinCondition(int action)
+{
+    int action_parent = find(action);
+    int corners = popcount(patterns[action_parent] & 0x3f);
+    int edges = popcount(patterns[action_parent] >> 6);
+    if (corners >= 2) win_condition[(static_cast<int>(winner_) - 1) * 3 + 1] = 1.0f;
+    if (edges >= 3) win_condition[(static_cast<int>(winner_) - 1) * 3 + 2] = 1.0f;
+    if (hasRing(action)) win_condition[(static_cast<int>(winner_) - 1) * 3] = 1.0f;
+
+    int wc_count = 0;
+    for (int i = 0; i < 3; ++i) {
+        if (win_condition[(static_cast<int>(winner_) - 1) * 3 + i] == 1.0f) {
+            wc_count++;
+        }
+    }
+
+    if (wc_count > 1) {
+        for (int i = 0; i < 3; ++i) {
+            if (win_condition[(static_cast<int>(winner_) - 1) * 3 + i] == 1.0f) {
+                win_condition[(static_cast<int>(winner_) - 1) * 3 + i] = 1.0f / wc_count;
+            }
+        }
+    }
 }
 
 std::vector<float> HavannahEnvLoader::getActionFeatures(const int pos, utils::Rotation rotation /* = utils::Rotation::kRotationNone */) const
