@@ -102,6 +102,7 @@ public:
     inline void setPolicy(float policy) { policy_ = policy; }
     inline void setPolicyLogit(float policy_logit) { policy_logit_ = policy_logit; }
     inline void setPolicyNoise(float policy_noise) { policy_noise_ = policy_noise; }
+    inline void setWinCondition(int index, float value) { win_condition_[index] = value; }
     inline void setValue(float value) { value_ = value; }
     inline void setReward(float reward) { reward_ = reward; }
     inline void setFirstChild(MCTSNode* first_child) { TreeNode::setFirstChild(first_child); }
@@ -115,6 +116,7 @@ public:
     inline float getPolicy() const { return policy_; }
     inline float getPolicyLogit() const { return policy_logit_; }
     inline float getPolicyNoise() const { return policy_noise_; }
+    inline float getWinCondition(int index) const { return win_condition_[index]; }
     inline float getValue() const { return value_; }
     inline float getReward() const { return reward_; }
     inline virtual MCTSNode* getChild(int index) const override { return (index < num_children_ ? static_cast<MCTSNode*>(first_child_) + index : nullptr); }
@@ -127,6 +129,7 @@ protected:
     float policy_;
     float policy_logit_;
     float policy_noise_;
+    std::vector<float> win_condition_;
     float value_;
     float reward_;
 };
@@ -245,7 +248,7 @@ public:
         }
     }
 
-    virtual void backup(const std::vector<MCTSNode*>& node_path, const float value, const float reward = 0.0f, const std::vector<float>& win_condition)
+    virtual void backup(const std::vector<MCTSNode*>& node_path, const std::vector<float>& win_condition, const float value, const float reward = 0.0f)
     {
         assert(node_path.size() > 0);
         float updated_value = value;
@@ -259,8 +262,9 @@ public:
             updated_value = node->getReward() + config::actor_mcts_reward_discount * updated_value;
         }
         for (int i = 0; i < 6; ++i) {
-            float old_win_condition = node_path.back()->win_condition_[i];
-            node_path.back()->win_condition_[i] = (old_win_condition * node_path.back()->getCount() + win_condition[i]) / (node_path.back()->getCount() + 1);
+            float old_win_condition = node_path.back()->getWinCondition(i);
+            float new_win_condition = (old_win_condition * node_path.back()->getCount() + win_condition[i]) / (node_path.back()->getCount() + 1);
+            node_path.back()->setWinCondition(i, new_win_condition);
         }
     }
 

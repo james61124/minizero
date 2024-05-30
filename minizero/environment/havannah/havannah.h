@@ -109,6 +109,11 @@ class HavannahEnvLoader : public BaseBoardEnvLoader<HavannahAction, HavannahEnv>
 public:
     std::vector<float> getActionFeatures(const int pos, utils::Rotation rotation = utils::Rotation::kRotationNone) const override;
     inline std::vector<float> getValue(const int pos) const { return {getReturn()}; }
+    inline std::vector<float> getWinCondition(int position, utils::Rotation rotation) const { // tmp
+        std::vector<float> win_condition(6, 0.0f);
+        win_condition[0] = 1.0f;
+        return win_condition;
+    }
     inline std::string name() const override { return kHavannahName + "_" + std::to_string(getBoardSize()) + "x" + std::to_string(getBoardSize()); }
     inline int getPolicySize() const override { return getBoardSize() * getBoardSize(); }
     inline int getRotatePosition(int position, utils::Rotation rotation) const override { return position; }
