@@ -44,7 +44,7 @@ class PolicyNetwork(nn.Module):
 
 class WinConditionNetwork(nn.Module):
     def __init__(self, num_channels, channel_height, channel_width, win_condition_size):
-        super(PolicyNetwork, self).__init__()
+        super(WinConditionNetwork, self).__init__()
         self.channel_height = channel_height
         self.channel_width = channel_width
         self.num_output_channels = math.ceil(win_condition_size / (channel_height * channel_width))
