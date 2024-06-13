@@ -102,7 +102,7 @@ public:
     inline void setPolicy(float policy) { policy_ = policy; }
     inline void setPolicyLogit(float policy_logit) { policy_logit_ = policy_logit; }
     inline void setPolicyNoise(float policy_noise) { policy_noise_ = policy_noise; }
-    inline void setWinCondition(int index, float value) { win_condition_[index] = value; }
+    inline void setWinCondition(const std::vector<float>& win_condition) { win_condition_ = win_condition; }
     inline void setValue(float value) { value_ = value; }
     inline void setReward(float reward) { reward_ = reward; }
     inline void setFirstChild(MCTSNode* first_child) { TreeNode::setFirstChild(first_child); }
@@ -275,6 +275,7 @@ public:
         for (int i = 0; i < 6; ++i) {
             old_win_condition[i] = (old_win_condition[i] * node_path.back()->getCount() + win_condition[i]) / (node_path.back()->getCount() + 1);
         }
+        node_path.back()->setWinCondition(old_win_condition);
     }
 
     inline MCTSNode* allocateNodes(int size) { return static_cast<MCTSNode*>(Tree::allocateNodes(size)); }
