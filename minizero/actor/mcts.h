@@ -116,7 +116,7 @@ public:
     inline float getPolicy() const { return policy_; }
     inline float getPolicyLogit() const { return policy_logit_; }
     inline float getPolicyNoise() const { return policy_noise_; }
-    inline float getWinCondition(int index) const { return win_condition_[index]; }
+    inline const std::vector<float>& getWinCondition() const { return win_condition_; }
     inline float getValue() const { return value_; }
     inline float getReward() const { return reward_; }
     inline virtual MCTSNode* getChild(int index) const override { return (index < num_children_ ? static_cast<MCTSNode*>(first_child_) + index : nullptr); }
@@ -261,10 +261,9 @@ public:
             updateTreeValueBound(old_mean, node->getReward() + config::actor_mcts_reward_discount * node->getMean());
             updated_value = node->getReward() + config::actor_mcts_reward_discount * updated_value;
         }
+        std::vector<float> old_win_condition = node_path.back()->getWinCondition();
         for (int i = 0; i < 6; ++i) {
-            float old_win_condition = node_path.back()->getWinCondition(i);
-            float new_win_condition = (old_win_condition * node_path.back()->getCount() + win_condition[i]) / (node_path.back()->getCount() + 1);
-            node_path.back()->setWinCondition(i, new_win_condition);
+            old_win_condition[i] = (old_win_condition[i] * node_path.back()->getCount() + win_condition[i]) / (node_path.back()->getCount() + 1);
         }
     }
 
