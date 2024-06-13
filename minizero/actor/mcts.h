@@ -219,6 +219,16 @@ public:
         return oss.str();
     }
 
+    virtual std::string getWinConditionString() const
+    {
+        const MCTSNode* root = getRootNode();
+        std::ostringstream oss;
+        for (int i = 0; i < 6; ++i) {
+            oss << (oss.str().empty() ? "" : ",") << root->getWinCondition()[i];
+        }
+        return oss.str();
+    }
+
     virtual std::vector<MCTSNode*> select() { return selectFromNode(getRootNode()); }
 
     virtual std::vector<MCTSNode*> selectFromNode(MCTSNode* start_node)
