@@ -48,7 +48,7 @@ protected:
     std::vector<std::pair<std::string, std::string>> getActionInfo() const override;
     std::string getMCTSPolicy() const override { return (config::actor_use_gumbel ? gumbel_zero_.getMCTSPolicy(getMCTS()) : getMCTS()->getSearchDistributionString()); }
     std::string getMCTSValue() const override { return std::to_string(getMCTS()->getRootNode()->getMean()); }
-    std::string getWinCondition() const override { return std::to_string(getMCTS()->getRootNode()->getWinConditionString()); }
+    std::string getWinCondition() const override { return getMCTS()->getWinConditionString(); }
     std::string getEnvReward() const override;
 
     virtual void step();
