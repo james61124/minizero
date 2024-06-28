@@ -151,6 +151,10 @@ bool HavannahEnv::on_virtual_bridge(int action, Player player, int bridgeType) c
         {-1, -board_size_, 0, -board_size_ - 1}
     };
 
+    for (int i = 0; i < 4; i++) {
+        if (!isOnBoard(action + offsets[bridgeType][i])) return false;
+    }
+
     return (board_[action + offsets[bridgeType][0]] == static_cast<Player>(player))
         && (board_[action + offsets[bridgeType][1]] == static_cast<Player>(player))
         && (board_[action + offsets[bridgeType][2]] == Player::kPlayerNone)
@@ -167,6 +171,10 @@ bool HavannahEnv::make_virtual_bridge(int action, Player player, int bridgeType)
         {board_size_ - 1, board_size_, -1},
         {-board_size_ - 2, -1, -board_size_ - 1}
     };
+
+    for (int i = 0; i < 3; i++) {
+        if (!isOnBoard(action + offsets[bridgeType][i])) return false;
+    }
 
     return (board_[action + offsets[bridgeType][0]] == static_cast<Player>(player))
         && (board_[action + offsets[bridgeType][1]] == Player::kPlayerNone)
@@ -208,13 +216,13 @@ std::vector<float> HavannahEnv::getFeatures(utils::Rotation rotation /* = utils:
                 vFeatures.push_back((on_virtual_bridge(rotation_pos, turn_, channel - 4) ? 1.0f : 0.0f));
             }
             if (channel >= 10 && channel <= 15) {
-                vFeatures.push_back((on_virtual_bridge(rotation_pos, getNextPlayer(turn_, kHavannahNumPlayer), channel - 4) ? 1.0f : 0.0f));
+                vFeatures.push_back((on_virtual_bridge(rotation_pos, getNextPlayer(turn_, kHavannahNumPlayer), channel - 10) ? 1.0f : 0.0f));
             }
             if (channel >= 16 && channel <= 21) {
-                vFeatures.push_back((make_virtual_bridge(rotation_pos, turn_, channel - 10) ? 1.0f : 0.0f));
+                vFeatures.push_back((make_virtual_bridge(rotation_pos, turn_, channel - 16) ? 1.0f : 0.0f));
             }
             if (channel >= 22 && channel <= 27) {
-                vFeatures.push_back((make_virtual_bridge(rotation_pos, getNextPlayer(turn_, kHavannahNumPlayer), channel - 10) ? 1.0f : 0.0f));
+                vFeatures.push_back((make_virtual_bridge(rotation_pos, getNextPlayer(turn_, kHavannahNumPlayer), channel - 22) ? 1.0f : 0.0f));
             }
         }
     }
